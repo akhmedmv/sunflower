@@ -37,7 +37,7 @@ import javax.inject.Inject
 @HiltViewModel
 class PlantDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    plantRepository: PlantRepository,
+    private val plantRepository: PlantRepository,
     private val gardenPlantingRepository: GardenPlantingRepository,
 ) : ViewModel() {
 
@@ -59,6 +59,13 @@ class PlantDetailViewModel @Inject constructor(
         viewModelScope.launch {
             gardenPlantingRepository.createGardenPlanting(plantId)
             _showSnackbar.value = true
+        }
+    }
+
+    fun updatePlantName(newName: String) {
+        viewModelScope.launch {
+                plantRepository.updatePlantName(plantId, newName)
+                _showSnackbar.value = true
         }
     }
 

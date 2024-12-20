@@ -28,6 +28,10 @@ import javax.inject.Singleton
 @Singleton
 class PlantRepository @Inject constructor(private val plantDao: PlantDao) {
 
+    suspend fun updatePlantName(plantId: String, newName: String) {
+        plantDao.updatePlantName(plantId, newName)
+    }
+
     fun getPlants() = plantDao.getPlants()
 
     fun getPlant(plantId: String) = plantDao.getPlant(plantId)
@@ -38,7 +42,8 @@ class PlantRepository @Inject constructor(private val plantDao: PlantDao) {
     companion object {
 
         // For Singleton instantiation
-        @Volatile private var instance: PlantRepository? = null
+        @Volatile
+        private var instance: PlantRepository? = null
 
         fun getInstance(plantDao: PlantDao) =
             instance ?: synchronized(this) {

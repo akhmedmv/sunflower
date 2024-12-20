@@ -18,6 +18,7 @@ package com.google.samples.apps.sunflower.compose.plantdetail
 
 import android.graphics.drawable.Drawable
 import android.text.method.LinkMovementMethod
+import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
@@ -31,6 +32,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -41,11 +43,14 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -53,6 +58,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 
@@ -75,6 +81,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -83,6 +90,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.text.HtmlCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.load.DataSource
@@ -252,6 +260,7 @@ private fun PlantDetailsContent(
             }
 
             PlantInformation(
+                viewModel = viewModel(),
                 name = plant.name,
                 wateringInterval = plant.wateringInterval,
                 description = plant.description,
@@ -342,6 +351,71 @@ private fun PlantFab(
             contentDescription = null
         )
     }
+}
+
+@Composable
+private fun PlantEditName(
+    text: String,
+    viewModel: PlantDetailViewModel,
+    onNamePosition: (Float) -> Unit,
+    toolbarState: ToolbarState,
+    modifier: Modifier
+) {
+    var isEditing by remember { mutableStateOf(false) }
+
+    var plantName by remember { mutableStateOf(text) }
+
+    Row(
+        modifier = modifier
+            .padding(
+                start = Dimens.PaddingSmall,
+                end = Dimens.PaddingSmall,
+                bottom = Dimens.PaddingNormal
+            )
+    ) {
+        if (isEditing) {
+            Log.d("PlantEditName", "Editing mode is ON")
+            TextField(
+                value = plantName,
+                onValueChange = { plantName = it },
+                modifier = Modifier
+                    .onGloballyPositioned { onNamePosition(it.positionInWindow().y) },
+                placeholder = { Text("Enter plant name") },
+                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Text)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = {
+                    Log.d("PlanEdit", "Save button clicked!")
+                    viewModel.updatePlantName(plantName)
+                    isEditing = false
+                },
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
+                Text(text = "Save")
+            }
+        } else {
+            Log.d("PlantEditName", "Display plant name: $plantName")
+            Text(
+                text = plantName,
+                style = MaterialTheme.typography.displaySmall,
+                modifier = Modifier
+                    .onGloballyPositioned { onNamePosition(it.positionInWindow().y) }
+                    .visible { toolbarState == ToolbarState.HIDDEN }
+            )
+        }
+        if (!isEditing) {
+            IconButton(
+                onClick = {
+                    Log.d("PlantEditName", "Edit icon clicked")
+                    isEditing = true
+                }
+            ) {
+                Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit name")
+            }
+        }
+    }
+    Log.d("PlantEditName", "$isEditing")
 }
 
 @Composable
@@ -480,6 +554,7 @@ private fun PlantHeaderActions(
 
 @Composable
 private fun PlantInformation(
+    viewModel: PlantDetailViewModel,
     name: String,
     wateringInterval: Int,
     description: String,
@@ -490,18 +565,12 @@ private fun PlantInformation(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.padding(Dimens.PaddingLarge)) {
-        Text(
+        PlantEditName(
             text = name,
-            style = MaterialTheme.typography.displaySmall,
-            modifier = Modifier
-                .padding(
-                    start = Dimens.PaddingSmall,
-                    end = Dimens.PaddingSmall,
-                    bottom = Dimens.PaddingNormal
-                )
-                .align(Alignment.CenterHorizontally)
-                .onGloballyPositioned { onNamePosition(it.positionInWindow().y) }
-                .visible { toolbarState == ToolbarState.HIDDEN }
+            onNamePosition = onNamePosition,
+            toolbarState = toolbarState,
+            viewModel = viewModel,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
         )
         Box(
             Modifier

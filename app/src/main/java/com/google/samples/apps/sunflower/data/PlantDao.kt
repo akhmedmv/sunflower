@@ -35,6 +35,9 @@ interface PlantDao {
     @Query("SELECT * FROM plants WHERE id = :plantId")
     fun getPlant(plantId: String): Flow<Plant>
 
+    @Query("UPDATE plants SET name = :name WHERE id = :plantId")
+    suspend fun updatePlantName(plantId: String, name: String)
+
     @Upsert
     suspend fun upsertAll(plants: List<Plant>)
 }
